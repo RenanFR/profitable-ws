@@ -1,6 +1,7 @@
 package com.profitable.ws.resource;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,10 +16,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.EntityType;
+import com.profitable.ws.model.entity.Order;
+import com.profitable.ws.model.entity.OrderStatus;
+import com.profitable.ws.model.entity.OrderType;
 import com.profitable.ws.model.entity.Trader;
 import com.profitable.ws.service.ExchangeAccountService;
 import com.profitable.ws.service.impl.TraderService;
@@ -74,6 +79,14 @@ public class TraderResource implements GenericController<Trader> {
 	@GetMapping("{id}/wallet/balance")
 	public ResponseEntity<Map<CurrencyType, BigDecimal>> walletBalance(@PathVariable("id") Long traderId) {
 		return ResponseEntity.ok(exchangeService.getBalance());
+	}
+	
+	@GetMapping("{id}/orders")
+	public ResponseEntity<List<Order>> orders(@PathVariable("id") Long traderId, @RequestParam("status") OrderStatus status, 
+			@RequestParam("start_date") LocalDate startDate, @RequestParam("end_date") LocalDate endDate,
+			@RequestParam("pair") String pair, @RequestParam("type") OrderType orderType,
+			@RequestParam(value = "page_size", required = false) Integer pageSize, @RequestParam(value = "current_page", required = false) Integer currentPage) {
+		return ResponseEntity.ok(exchangeService.orders(status, startDate, endDate, CurrencyType.valueOf(pair.substring(3)), orderType, pageSize, currentPage));
 	}
 	
 }

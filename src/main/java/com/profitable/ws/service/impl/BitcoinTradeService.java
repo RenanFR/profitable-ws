@@ -1,7 +1,9 @@
 package com.profitable.ws.service.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -18,8 +20,13 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.profitable.ws.model.dto.AssetTicker;
+import com.profitable.ws.model.dto.BitcoinTradeApiData;
 import com.profitable.ws.model.dto.BitcoinTradeApiResponse;
+import com.profitable.ws.model.dto.BitcoinTradeApiResponseOrders;
 import com.profitable.ws.model.entity.CurrencyType;
+import com.profitable.ws.model.entity.Order;
+import com.profitable.ws.model.entity.OrderStatus;
+import com.profitable.ws.model.entity.OrderType;
 import com.profitable.ws.service.ExchangeAccountService;
 
 @Service
@@ -73,6 +80,24 @@ public class BitcoinTradeService implements ExchangeAccountService {
 			.transactions(Long.valueOf(response.getData()[0].get("transactions_number")))
 			.build();
 		return assetTicker;
+	}
+
+	@Override
+	public List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, CurrencyType currency,
+			OrderType orderType, Integer pageSize, Integer currentPage) {
+		String uri = UriComponentsBuilder
+			.fromHttpUrl(apiUrl.concat("/market/user_orders/list"))
+			.queryParam("status", status.toString().toLowerCase())
+			.queryParam("start_date", startDate)
+			.queryParam("end_date", endDate)
+			.queryParam("pair", "BRL" + currency.toString())
+			.queryParam("type", orderType.toString().toLowerCase())
+			.queryParam("page_size", pageSize)
+			.queryParam("current_page", currentPage)
+			.build()
+			.toUriString();
+		ResponseEntity<BitcoinTradeApiResponseOrders> response = restTemplate.exchange(uri, HttpMethod.GET, requestParameters, BitcoinTradeApiResponseOrders.class);
+		return response.getBody().getData().getOrders();
 	}
 
 }

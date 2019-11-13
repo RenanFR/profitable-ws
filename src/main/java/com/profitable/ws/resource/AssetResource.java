@@ -27,6 +27,7 @@ public class AssetResource {
 	@Autowired
 	private List<ExchangeService> servicesExchange;
 	
+	//FIXME Filter service implementation by exchange
 	@GetMapping("cripto/quote/{ticker}")
 	public ResponseEntity<AssetTicker> quote(TradingType assetType, @PathVariable("ticker") CurrencyType ticker, @RequestParam(value = "exchange", required = false) ExchangeName exchange) {
 		ExchangeService exchangeToCheck;
