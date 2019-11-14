@@ -20,13 +20,15 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.profitable.ws.model.dto.AssetTicker;
-import com.profitable.ws.model.dto.BitcoinTradeApiData;
 import com.profitable.ws.model.dto.BitcoinTradeApiResponse;
-import com.profitable.ws.model.dto.BitcoinTradeApiResponseOrders;
+import com.profitable.ws.model.dto.BitcoinTradeApiSimpleResponse;
+import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
+import com.profitable.ws.model.entity.DepositStatus;
 import com.profitable.ws.model.entity.Order;
 import com.profitable.ws.model.entity.OrderStatus;
 import com.profitable.ws.model.entity.OrderType;
+import com.profitable.ws.model.entity.Withdraw;
 import com.profitable.ws.service.ExchangeAccountService;
 
 @Service
@@ -55,8 +57,8 @@ public class BitcoinTradeService implements ExchangeAccountService {
 	
 	@Override
 	public Map<CurrencyType, BigDecimal> getBalance() {
-		ResponseEntity<BitcoinTradeApiResponse> walletBalance = restTemplate
-				.exchange(apiUrl.concat("/wallets/balance"), HttpMethod.GET, requestParameters, BitcoinTradeApiResponse.class);
+		ResponseEntity<BitcoinTradeApiSimpleResponse> walletBalance = restTemplate
+				.exchange(apiUrl.concat("/wallets/balance"), HttpMethod.GET, requestParameters, BitcoinTradeApiSimpleResponse.class);
 		var wallet = new HashMap<CurrencyType, BigDecimal>();
 		for (Map<String, String> currencyPair : walletBalance.getBody().getData()) {
 			BigDecimal availableAmount = new BigDecimal(currencyPair.get("available_amount")).add(new BigDecimal(currencyPair.get("locked_amount")));
@@ -68,7 +70,7 @@ public class BitcoinTradeService implements ExchangeAccountService {
 	@Override
 	public AssetTicker getCurrencyQuote(CurrencyType baseCoin, CurrencyType ticker, BigDecimal amountToBuy) {
 		String uri = UriComponentsBuilder.fromHttpUrl(apiUrl.concat("/market/summary")).queryParam("pair", baseCoin.toString() + ticker.toString()).build().toUriString();
-		BitcoinTradeApiResponse response = restTemplate.exchange(uri, HttpMethod.GET, requestParameters, BitcoinTradeApiResponse.class).getBody();
+		BitcoinTradeApiSimpleResponse response = restTemplate.exchange(uri, HttpMethod.GET, requestParameters, BitcoinTradeApiSimpleResponse.class).getBody();
 		AssetTicker assetTicker = AssetTicker
 			.builder()
 			.last(new BigDecimal(response.getData()[0].get("last_transaction_unit_price")))
@@ -92,12 +94,42 @@ public class BitcoinTradeService implements ExchangeAccountService {
 			.queryParam("end_date", endDate)
 			.queryParam("pair", "BRL" + currency.toString())
 			.queryParam("type", orderType.toString().toLowerCase())
-			.queryParam("page_size", pageSize)
-			.queryParam("current_page", currentPage)
+			.queryParam("page_size", 100)
+			.queryParam("current_page", 1)
 			.build()
 			.toUriString();
-		ResponseEntity<BitcoinTradeApiResponseOrders> response = restTemplate.exchange(uri, HttpMethod.GET, requestParameters, BitcoinTradeApiResponseOrders.class);
+		ResponseEntity<BitcoinTradeApiResponse> response = restTemplate.exchange(uri, HttpMethod.GET, requestParameters, BitcoinTradeApiResponse.class);
 		return response.getBody().getData().getOrders();
+	}
+	
+	@Override
+	public List<CriptoDeposit> criptoDeposits(CurrencyType coin, Integer pageSize, Integer currentPage,
+			DepositStatus status, LocalDate startDate, LocalDate endDate) {
+		String uri = UriComponentsBuilder
+			.fromHttpUrl(String.format("%s/%s/%s", apiUrl, coin.getCoinName(), "deposits"))
+			.queryParam("page_size", 100)
+			.queryParam("current_page", 1)
+			.queryParam("status", status.toString().toLowerCase())
+			.queryParam("start_date", startDate)
+			.queryParam("end_date", endDate)
+			.toUriString();
+		ResponseEntity<BitcoinTradeApiResponse> response = restTemplate.exchange(uri, HttpMethod.GET, requestParameters, BitcoinTradeApiResponse.class);
+		return response.getBody().getData().getDeposits();
+	}
+
+	@Override
+	public List<Withdraw> criptoWithdrawals(CurrencyType coin, Integer pageSize, Integer currentPage,
+			DepositStatus status, LocalDate startDate, LocalDate endDate) {
+		String uri = UriComponentsBuilder
+				.fromHttpUrl(String.format("%s/%s/%s", apiUrl, coin.getCoinName(), "withdraw"))
+				.queryParam("page_size", 100)
+				.queryParam("current_page", 1)
+				.queryParam("status", status.toString().toLowerCase())
+				.queryParam("start_date", startDate)
+				.queryParam("end_date", endDate)
+				.toUriString();
+		ResponseEntity<BitcoinTradeApiResponse> response = restTemplate.exchange(uri, HttpMethod.GET, requestParameters, BitcoinTradeApiResponse.class);
+		return response.getBody().getData().getWithdrawals();
 	}
 
 }
