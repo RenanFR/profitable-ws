@@ -10,6 +10,17 @@ import com.profitable.ws.model.dto.OrderStatusJsonDeserializer;
 import com.profitable.ws.model.dto.OrderSubtypeJsonDeserializer;
 import com.profitable.ws.model.dto.OrderTypeJsonDeserializer;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
 public class Order {
 	
 	private String id;
@@ -42,6 +53,14 @@ public class Order {
 	
 	@JsonProperty("total_price")
 	private BigDecimal totalPrice;
+	
+	@JsonProperty("request_price")
+	private BigDecimal requestPrice;
+	
+	private BigDecimal amount;
+	
+	@JsonProperty("user_code")
+	private String userCode;
 	
 	@JsonProperty("executed_amount")
 	private BigDecimal executedAmount;

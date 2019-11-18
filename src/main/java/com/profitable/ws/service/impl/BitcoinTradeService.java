@@ -20,12 +20,13 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.profitable.ws.model.dto.AssetTicker;
-import com.profitable.ws.model.dto.BitcoinTradeApiData;
 import com.profitable.ws.model.dto.BitcoinTradeApiResponse;
+import com.profitable.ws.model.dto.BitcoinTradeApiResponseOrderCreated;
 import com.profitable.ws.model.dto.BitcoinTradeApiResponseOrders;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.Order;
 import com.profitable.ws.model.entity.OrderStatus;
+import com.profitable.ws.model.entity.OrderSubtype;
 import com.profitable.ws.model.entity.OrderType;
 import com.profitable.ws.service.ExchangeAccountService;
 
@@ -98,6 +99,33 @@ public class BitcoinTradeService implements ExchangeAccountService {
 			.toUriString();
 		ResponseEntity<BitcoinTradeApiResponseOrders> response = restTemplate.exchange(uri, HttpMethod.GET, requestParameters, BitcoinTradeApiResponseOrders.class);
 		return response.getBody().getData().getOrders();
+	}
+
+	@Override
+	public Order createOrder(CurrencyType currency, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount,
+			BigDecimal unitPrice, BigDecimal requestPrice) {
+		HttpEntity<Order> orderData = new HttpEntity<Order>(Order.builder()
+				.pair("BRL".concat(currency.name()))
+				.amount(amount)
+				.type(orderType)
+				.subtype(orderSubtype)
+				.unitPrice(unitPrice)
+				.requestPrice(requestPrice)
+				.build());
+		String url = UriComponentsBuilder
+			.fromHttpUrl(apiUrl.concat("/market/create_order"))
+			.toUriString();
+		Order response = restTemplate.exchange(url, HttpMethod.POST, orderData, BitcoinTradeApiResponseOrderCreated.class).getBody().getData();
+		return response;
+	}
+
+	@Override
+	public Integer cancelOrder(String orderId) {
+		String url = UriComponentsBuilder
+				.fromHttpUrl(String.format("%s/%s/%s", apiUrl, "/market/user_orders/", orderId))
+				.toUriString();
+		ResponseEntity<Integer> statusCode = restTemplate.exchange(url, HttpMethod.DELETE, requestParameters, Integer.class);
+		return statusCode.getBody();
 	}
 
 }
