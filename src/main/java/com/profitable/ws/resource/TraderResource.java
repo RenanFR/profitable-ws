@@ -19,12 +19,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
+import com.profitable.ws.model.entity.DepositStatus;
 import com.profitable.ws.model.entity.EntityType;
 import com.profitable.ws.model.entity.Order;
 import com.profitable.ws.model.entity.OrderStatus;
 import com.profitable.ws.model.entity.OrderType;
 import com.profitable.ws.model.entity.Trader;
+import com.profitable.ws.model.entity.Withdraw;
 import com.profitable.ws.service.ExchangeAccountService;
 import com.profitable.ws.service.impl.TraderService;
 
@@ -87,6 +90,20 @@ public class TraderResource implements GenericController<Trader> {
 			@RequestParam("pair") String pair, @RequestParam("type") OrderType orderType,
 			@RequestParam(value = "page_size", required = false) Integer pageSize, @RequestParam(value = "current_page", required = false) Integer currentPage) {
 		return ResponseEntity.ok(exchangeService.orders(status, startDate, endDate, CurrencyType.valueOf(pair.substring(3)), orderType, pageSize, currentPage));
+	}
+	
+	@GetMapping("{id}/deposits/{coin}")
+	public ResponseEntity<List<CriptoDeposit>> deposits(@PathVariable("id") Long traderId, @PathVariable("coin") CurrencyType coin, @RequestParam("status") DepositStatus status, 
+			@RequestParam("start_date") LocalDate startDate, @RequestParam("end_date") LocalDate endDate,
+			@RequestParam(value = "page_size", required = false) Integer pageSize, @RequestParam(value = "current_page", required = false) Integer currentPage) {
+		return ResponseEntity.ok(exchangeService.criptoDeposits(coin, pageSize, currentPage, status, startDate, endDate));
+	}
+	
+	@GetMapping("{id}/withdrawals/{coin}")
+	public ResponseEntity<List<Withdraw>> withdrawals(@PathVariable("id") Long traderId, @PathVariable("coin") CurrencyType coin, @RequestParam("status") DepositStatus status, 
+			@RequestParam("start_date") LocalDate startDate, @RequestParam("end_date") LocalDate endDate,
+			@RequestParam(value = "page_size", required = false) Integer pageSize, @RequestParam(value = "current_page", required = false) Integer currentPage) {
+		return ResponseEntity.ok(exchangeService.criptoWithdrawals(coin, pageSize, currentPage, status, startDate, endDate));
 	}
 	
 }

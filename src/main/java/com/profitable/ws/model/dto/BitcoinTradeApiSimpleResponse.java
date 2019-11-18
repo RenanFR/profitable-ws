@@ -1,14 +1,16 @@
 package com.profitable.ws.model.dto;
 
+import java.util.Map;
+
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class BitcoinTradeApiResponseOrders {
+public class BitcoinTradeApiSimpleResponse {
 	
 	private String message;
 	
-	private BitcoinTradeApiData data;
-
+	private Map<String, String>[] data;
+	
 }
