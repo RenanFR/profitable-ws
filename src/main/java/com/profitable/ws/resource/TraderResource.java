@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +40,7 @@ public class TraderResource implements GenericController<Trader> {
 	private TraderService service;
 	
 	@Autowired
+	@Qualifier("bitcointrade")
 	private ExchangeAccountService exchangeService;
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TraderResource.class);

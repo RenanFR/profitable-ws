@@ -9,7 +9,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -33,8 +32,7 @@ import com.profitable.ws.model.entity.OrderType;
 import com.profitable.ws.model.entity.Withdraw;
 import com.profitable.ws.service.ExchangeAccountService;
 
-@Service
-@Qualifier("bitcointrade")
+@Service("bitcointrade")
 public class BitcoinTradeService implements ExchangeAccountService {
 	
 	@Value("${bitcointrade.api.token}")
