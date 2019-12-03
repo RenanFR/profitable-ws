@@ -1,6 +1,7 @@
 package com.profitable.ws.service.impl;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -38,6 +39,12 @@ public class BiscointService implements ExchangeService {
 		HttpEntity<?> httpRequest = new HttpEntity<>(new HttpHeaders());
 		ResponseEntity<AssetTicker> tickerBiscoint = restTemplate.exchange(uri, HttpMethod.GET, httpRequest, AssetTicker.class);
 		return tickerBiscoint.getBody();
+	}
+
+	@Override
+	public List<CurrencyType> symbols() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

@@ -55,8 +55,8 @@ public class CoinextService implements ExchangeAccountService {
 	@Value("${coinext.api.password}")
 	private String apiPassword;	
 	
-	@Autowired
-	private StompSession stompSession;
+//	@Autowired
+//	private StompSession stompSession;
 	
 	private String authToken;
 	
@@ -70,7 +70,7 @@ public class CoinextService implements ExchangeAccountService {
 //		headers.add("Upgrade", "websocket");
 //		String handShake = restTemplate.getForObject(websocketUrl, String.class, headers);
 		UserCoinext user = UserCoinext.builder().UserName(apiEmail).Password(apiPassword).build();
-		stompSession.send(websocketUrl.concat("/WebAuthenticateUser"), user);
+//		stompSession.send(websocketUrl.concat("/WebAuthenticateUser"), user);
 		requestParameters = new HttpEntity<Object>(headers);
 	}	
 	
@@ -105,19 +105,19 @@ public class CoinextService implements ExchangeAccountService {
 				.Depth(100)
 				.build();
 		requestParameters = new HttpEntity<Object>(request);
-		stompSession.subscribe("GetAccountTransactions", new StompFrameHandler() {
-			
-			@Override
-			public void handleFrame(StompHeaders headers, Object payload) {
-				System.out.println(payload);
-			}
-			
-			@Override
-			public Type getPayloadType(StompHeaders headers) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-		});
+//		stompSession.subscribe("GetAccountTransactions", new StompFrameHandler() {
+//			
+//			@Override
+//			public void handleFrame(StompHeaders headers, Object payload) {
+//				System.out.println(payload);
+//			}
+//			
+//			@Override
+//			public Type getPayloadType(StompHeaders headers) {
+//				// TODO Auto-generated method stub
+//				return null;
+//			}
+//		});
 		String url = String.format("%s/%s", "https://".concat(apiUrl), "GetAccountTransactions");
 		ResponseEntity<String> transactions = restTemplate.exchange(url, HttpMethod.POST, requestParameters, String.class);
 		return null;
@@ -153,6 +153,12 @@ public class CoinextService implements ExchangeAccountService {
 	@Override
 	public List<Withdraw> criptoWithdrawals(CurrencyType coin, Integer pageSize, Integer currentPage,
 			DepositStatus status, LocalDate startDate, LocalDate endDate) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<CurrencyType> symbols() {
 		// TODO Auto-generated method stub
 		return null;
 	}

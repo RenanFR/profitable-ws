@@ -1,6 +1,7 @@
 package com.profitable.ws.service.impl;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,6 +29,12 @@ public class MercadoBitcoinService implements ExchangeService {
 	public AssetTicker getCurrencyQuote(CurrencyType baseCoin, CurrencyType ticker, BigDecimal amountToBuy) {
 		ResponseEntity<AssetTicker> assetTicker = restTemplate.exchange(String.format("%s/%s/%s", apiUrl, ticker, "/ticker/"), HttpMethod.GET, null, AssetTicker.class);
 		return assetTicker.getBody();
+	}
+
+	@Override
+	public List<CurrencyType> symbols() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

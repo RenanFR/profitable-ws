@@ -7,11 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.profitable.ws.model.dto.DepositStatusDeserializer;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
 public class Deposit {
 	
 	protected BigDecimal amount;
@@ -24,5 +19,37 @@ public class Deposit {
 	
 	@JsonProperty("confirmation_date")
 	protected LocalDateTime confirmationDate;
+
+	public BigDecimal getAmount() {
+		return amount;
+	}
+
+	public void setAmount(BigDecimal amount) {
+		this.amount = amount;
+	}
+
+	public DepositStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(DepositStatus status) {
+		this.status = status;
+	}
+
+	public LocalDateTime getCreateDate() {
+		return createDate;
+	}
+
+	public void setCreateDate(LocalDateTime createDate) {
+		this.createDate = createDate;
+	}
+
+	public LocalDateTime getConfirmationDate() {
+		return confirmationDate;
+	}
+
+	public void setConfirmationDate(LocalDateTime confirmationDate) {
+		this.confirmationDate = confirmationDate;
+	}
 	
 }

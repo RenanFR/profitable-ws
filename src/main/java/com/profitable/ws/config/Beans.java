@@ -1,7 +1,9 @@
 package com.profitable.ws.config;
 
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.client.WebSocketClient;
@@ -13,7 +15,8 @@ public class Beans {
 	
 	@Bean
 	public RestTemplate restTemplate() {
-		return new RestTemplate();
+		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(HttpClientBuilder.create().build());
+		return new RestTemplate(factory);
 	}
 	
 	@Bean

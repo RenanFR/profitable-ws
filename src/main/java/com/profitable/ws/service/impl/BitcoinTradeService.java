@@ -159,4 +159,10 @@ public class BitcoinTradeService implements ExchangeAccountService {
 		return statusCode.getBody();
 	}
 
+	@Override
+	public List<CurrencyType> symbols() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
