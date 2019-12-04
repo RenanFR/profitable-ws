@@ -8,11 +8,15 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.profitable.ws.model.dto.DepositStatusDeserializer;
 import com.profitable.ws.model.dto.MinerFeeTypeDeserializer;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@Builder
 public class Withdraw {
 	
 	private String code;

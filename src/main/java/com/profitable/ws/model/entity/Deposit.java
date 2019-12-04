@@ -19,6 +19,8 @@ public class Deposit {
 	
 	@JsonProperty("confirmation_date")
 	protected LocalDateTime confirmationDate;
+	
+	private Asset asset;
 
 	public BigDecimal getAmount() {
 		return amount;
@@ -50,6 +52,14 @@ public class Deposit {
 
 	public void setConfirmationDate(LocalDateTime confirmationDate) {
 		this.confirmationDate = confirmationDate;
+	}
+
+	public Asset getAsset() {
+		return asset;
+	}
+
+	public void setAsset(Asset asset) {
+		this.asset = asset;
 	}
 	
 }

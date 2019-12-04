@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.profitable.ws.model.dto.AssetTicker;
+import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.service.ExchangeService;
 
@@ -32,7 +33,7 @@ public class MercadoBitcoinService implements ExchangeService {
 	}
 
 	@Override
-	public List<CurrencyType> symbols() {
+	public List<Symbol> symbols() {
 		// TODO Auto-generated method stub
 		return null;
 	}

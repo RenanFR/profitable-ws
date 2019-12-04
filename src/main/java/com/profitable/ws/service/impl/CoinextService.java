@@ -25,6 +25,7 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 import com.profitable.ws.model.dto.AssetTicker;
 import com.profitable.ws.model.dto.CoinextRequest;
 import com.profitable.ws.model.dto.CoinextToken;
+import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.dto.UserCoinext;
 import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
@@ -158,7 +159,7 @@ public class CoinextService implements ExchangeAccountService {
 	}
 
 	@Override
-	public List<CurrencyType> symbols() {
+	public List<Symbol> symbols() {
 		// TODO Auto-generated method stub
 		return null;
 	}

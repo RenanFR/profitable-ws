@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,6 +36,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.profitable.ws.model.dto.AssetTicker;
 import com.profitable.ws.model.dto.BinanceCoinsInfo;
+import com.profitable.ws.model.dto.BinanceDeposit;
+import com.profitable.ws.model.dto.BinanceWithdraw;
+import com.profitable.ws.model.dto.Symbol;
+import com.profitable.ws.model.entity.Cripto;
 import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.DepositStatus;
@@ -43,7 +50,10 @@ import com.profitable.ws.model.entity.OrderType;
 import com.profitable.ws.model.entity.Withdraw;
 import com.profitable.ws.service.ExchangeAccountService;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service("binance")
+@Slf4j
 public class BinanceService implements ExchangeAccountService {
 	
 	@Value("${binance.api.endpoint}")
@@ -76,6 +86,8 @@ public class BinanceService implements ExchangeAccountService {
 	
 	private HttpEntity<Object> requestParameters;
 	
+	private ObjectMapper mapper = new ObjectMapper();
+	
 	@PostConstruct
 	public void setRequestConfigurations() throws NoSuchAlgorithmException, InvalidKeyException {
 		encoder = Mac.getInstance(ENCODE_ALGORITHM);
@@ -86,8 +98,21 @@ public class BinanceService implements ExchangeAccountService {
 
 	@Override
 	public AssetTicker getCurrencyQuote(CurrencyType baseCoin, CurrencyType ticker, BigDecimal amountToBuy) {
-		// TODO Auto-generated method stub
-		return null;
+		Symbol symbol = Symbol
+			.builder()
+			.baseAsset(baseCoin)
+			.quoteAsset(ticker)
+			.build();
+		String url = UriComponentsBuilder
+			.fromHttpUrl(apiUrl.concat("/api/v3/ticker/price"))
+			.queryParam("symbol", symbol.getBaseAsset().toString().concat(symbol.getQuoteAsset().toString()))
+			.build()
+			.toString();
+		ResponseEntity<String> json = restTemplate.exchange(url, HttpMethod.GET, requestParameters, String.class);
+		return AssetTicker
+				.builder()
+				.last(new BigDecimal(json.getBody().substring(json.getBody().toString().lastIndexOf(":") + 1, json.getBody().toString().lastIndexOf("}") - 2)))
+				.build();
 	}
 
 	@Override
@@ -97,7 +122,7 @@ public class BinanceService implements ExchangeAccountService {
 				.fromHttpUrl(apiUrl.concat("/sapi/v1/capital/config/getall"))
 				.queryParam(TIMESTAMP_PARAM, timestamp);
 		String totalParams = uriBuilder.build().getQuery();
-		signature = new String(Hex.encodeHex(encoder.doFinal(totalParams.getBytes())));
+		fillSignature(totalParams);
 		String uri = uriBuilder
 				.queryParam(SIGNED_PARAM, signature)
 				.toUriString();
@@ -113,11 +138,14 @@ public class BinanceService implements ExchangeAccountService {
 		BinaryOperator<BigDecimal> mergeFunction = (var b, var bb) -> b.add(bb);  
 		return coinsBinance.getBody().stream().collect(Collectors.toMap(coinKeyMapper, coinValueMapper, mergeFunction));
 	}
+	
+	private void fillSignature(String totalParams) {
+		signature = new String(Hex.encodeHex(encoder.doFinal(totalParams.getBytes())));
+	}
 
 	@Override
 	public List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, CurrencyType currency,
 			OrderType orderType, Integer pageSize, Integer currentPage) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -137,29 +165,111 @@ public class BinanceService implements ExchangeAccountService {
 	@Override
 	public List<CriptoDeposit> criptoDeposits(CurrencyType coin, Integer pageSize, Integer currentPage,
 			DepositStatus status, LocalDate startDate, LocalDate endDate) {
-		// TODO Auto-generated method stub
-		return null;
+		String service = "/sapi/v1/capital/deposit/hisrec";
+		UriComponentsBuilder uriBuilder = UriComponentsBuilder
+				.fromHttpUrl(apiUrl.concat(service))
+				.queryParam("coin", coin.toString())
+				.queryParam("timestamp", LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+				.queryParam("status", status == DepositStatus.PENDING? 0 : status == DepositStatus.CONFIRMATION_PENDING? 6 : 1)
+				.queryParam("startTime", startDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+				.queryParam("endTime", endDate.atTime(0, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());			
+		fillSignature(uriBuilder.build().getQuery());
+		String url = uriBuilder.queryParam(SIGNED_PARAM, signature).build().toString();
+		ResponseEntity<List<BinanceDeposit>> deposits = restTemplate.exchange(url, HttpMethod.GET, requestParameters, new ParameterizedTypeReference<List<BinanceDeposit>>() {});
+		return deposits
+				.getBody()
+				.stream()
+				.map(d -> {
+					CriptoDeposit deposit = new CriptoDeposit();
+					Cripto cripto = new Cripto();
+					deposit.setAmount(d.getAmount());
+					deposit.setHash(d.getTxId());
+					deposit.setCreateDate(LocalDateTime.ofInstant(Instant.ofEpochMilli(d.getInsertTime()), TimeZone.getDefault().toZoneId()));
+					deposit.setStatus(d.getStatus() == 0? DepositStatus.PENDING : d.getStatus() == 6? DepositStatus.CONFIRMATION_PENDING : DepositStatus.CONFIRMED);
+					cripto.setSymbol(d.getCoin());
+					deposit.setAsset(cripto);
+					return deposit;
+				})
+				.collect(Collectors.toList());
 	}
 
 	@Override
 	public List<Withdraw> criptoWithdrawals(CurrencyType coin, Integer pageSize, Integer currentPage,
 			DepositStatus status, LocalDate startDate, LocalDate endDate) {
-		// TODO Auto-generated method stub
-		return null;
+		String serviceAddress = "/sapi/v1/capital/withdraw/history";
+		UriComponentsBuilder uri = UriComponentsBuilder
+				.fromHttpUrl(apiUrl.concat(serviceAddress))
+				.queryParam("coin", coin.getCoinName())
+				.queryParam("timestamp", LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+				.queryParam("status", status == DepositStatus.PENDING? 0 : status == DepositStatus.CONFIRMATION_PENDING? 2 : status == DepositStatus.CONFIRMED? 6 : 1)
+				.queryParam("startTime", startDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+				.queryParam("endTime", endDate.atTime(0, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+		fillSignature(uri.build().getQuery());
+		ResponseEntity<List<BinanceWithdraw>> withdraws = restTemplate.exchange(uri.queryParam(SIGNED_PARAM, signature).build().toString(), HttpMethod.GET, requestParameters, new ParameterizedTypeReference<List<BinanceWithdraw>>() {});
+		return 	withdraws
+				.getBody()
+				.stream()
+				.map(w -> {
+					Withdraw withdraw = Withdraw
+						.builder()
+						.code(w.getId())
+						.destinationAddress(w.getAddress())
+						.amount(w.getAmount())
+						.status(w.getStatus() == 0 || w.getStatus() == 4? 
+								DepositStatus.PENDING : (w.getStatus() == 1 || w.getStatus() == 3 || w.getStatus() == 5)? 
+										DepositStatus.CANCELED : w.getStatus() == 2? DepositStatus.CONFIRMATION_PENDING : DepositStatus.CONFIRMED)
+						.build();
+					return withdraw;
+				})
+				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	@Override
-	public List<CurrencyType> symbols() {
+	public List<Symbol> symbols() {
 		ObjectMapper objectMapper = new ObjectMapper();
-		List<String> symbols = new ArrayList<>();
+		List<Symbol> symbols = new ArrayList<>();
 		String response = restTemplate.getForObject(apiUrl.concat("/api/v3/exchangeInfo"), String.class);
 		try {
-			objectMapper.readTree(response).get("symbols").elements().forEachRemaining(symbol -> symbols.add(symbol.get("baseAsset").asText()));
+			objectMapper.readTree(response).get("symbols").elements()
+				.forEachRemaining(symbol -> {
+					List<OrderSubtype> orderTypes = new ArrayList<>();
+					CurrencyType baseAsset;
+					CurrencyType quoteAsset;
+					symbol.get("orderTypes").elements().forEachRemaining(type -> {
+						orderTypes.add(OrderSubtype.valueOf(type.asText()));
+					});
+					try {
+						baseAsset = CurrencyType.valueOf(symbol.get("baseAsset").asText());
+					} catch (IllegalArgumentException exception) {
+						log.error(exception.getMessage());
+						baseAsset = CurrencyType.UNKNOWN;
+					}
+					try {
+						quoteAsset = CurrencyType.valueOf(symbol.get("quoteAsset").asText());
+					} catch (IllegalArgumentException exception) {
+						log.error(exception.getMessage());
+						quoteAsset = CurrencyType.UNKNOWN;						
+					}
+					Symbol s = Symbol
+							.builder()
+							.status(symbol.get("status").asText())
+							.baseAsset(baseAsset)
+							.baseAssetPrecision(symbol.get("baseAssetPrecision").asInt())
+							.quoteAsset(quoteAsset)
+							.quotePrecision(symbol.get("quotePrecision").asInt())
+							.orderTypes(orderTypes)
+							.icebergAllowed(symbol.get("icebergAllowed").asBoolean())
+							.ocoAllowed(symbol.get("ocoAllowed").asBoolean())
+							.isSpotTradingAllowed(symbol.get("isSpotTradingAllowed").asBoolean())
+							.isMarginTradingAllowed(symbol.get("isMarginTradingAllowed").asBoolean())
+							.build();
+					symbols.add(s);
+				});
 			symbols.stream().distinct().forEach(System.out::println);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error(e.getMessage());
 		}
-		return null;
+		return symbols;
 	}
 
 }

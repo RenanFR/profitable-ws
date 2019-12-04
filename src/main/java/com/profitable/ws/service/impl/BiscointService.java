@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.profitable.ws.model.dto.AssetTicker;
+import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.service.ExchangeService;
 
@@ -42,7 +43,7 @@ public class BiscointService implements ExchangeService {
 	}
 
 	@Override
-	public List<CurrencyType> symbols() {
+	public List<Symbol> symbols() {
 		// TODO Auto-generated method stub
 		return null;
 	}

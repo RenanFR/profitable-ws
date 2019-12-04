@@ -22,6 +22,7 @@ import com.profitable.ws.model.dto.AssetTicker;
 import com.profitable.ws.model.dto.BitcoinTradeApiResponse;
 import com.profitable.ws.model.dto.BitcoinTradeApiResponseOrderCreated;
 import com.profitable.ws.model.dto.BitcoinTradeApiSimpleResponse;
+import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.DepositStatus;
@@ -160,7 +161,7 @@ public class BitcoinTradeService implements ExchangeAccountService {
 	}
 
 	@Override
-	public List<CurrencyType> symbols() {
+	public List<Symbol> symbols() {
 		// TODO Auto-generated method stub
 		return null;
 	}
