@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.DepositStatus;
@@ -18,11 +19,11 @@ public interface ExchangeAccountService extends ExchangeService {
 
 	Map<CurrencyType, BigDecimal> getBalance();
 	
-	List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, CurrencyType currency, OrderType orderType, Integer pageSize, Integer currentPage);
+	List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, Symbol symbol, OrderType orderType, Integer pageSize, Integer currentPage);
 	
-	Order createOrder(CurrencyType currency, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount, BigDecimal unitPrice, BigDecimal requestPrice);
+	Order createOrder(Symbol symbol, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount, BigDecimal unitPrice, BigDecimal requestPrice, BigDecimal stopPrice, BigDecimal stopLimitPrice);
 	
-	Integer cancelOrder(String orderId);
+	Integer cancelOrder(Symbol symbol, String orderId);
 	
 	List<CriptoDeposit> criptoDeposits(CurrencyType coin, Integer pageSize, Integer currentPage, DepositStatus status, LocalDate startDate, LocalDate endDate);
 	

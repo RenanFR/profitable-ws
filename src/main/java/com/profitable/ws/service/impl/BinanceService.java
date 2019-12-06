@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +29,26 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import static com.binance.api.client.domain.account.NewOrder.*;
+
+import com.binance.api.client.BinanceApiRestClient;
+import com.binance.api.client.BinanceApiWebSocketClient;
+import com.binance.api.client.domain.TimeInForce;
+import com.binance.api.client.domain.account.NewOrderResponse;
+import com.binance.api.client.domain.account.NewOrderResponseType;
+import com.binance.api.client.domain.account.request.CancelOrderRequest;
+import com.binance.api.client.domain.account.request.CancelOrderResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.profitable.ws.model.dto.AssetTicker;
 import com.profitable.ws.model.dto.BinanceCoinsInfo;
 import com.profitable.ws.model.dto.BinanceDeposit;
+import com.profitable.ws.model.dto.BinanceOCOOrder;
+import com.profitable.ws.model.dto.BinanceOrder;
 import com.profitable.ws.model.dto.BinanceWithdraw;
 import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.entity.Cripto;
@@ -44,13 +56,16 @@ import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.DepositStatus;
 import com.profitable.ws.model.entity.Order;
+import com.profitable.ws.model.entity.OrderFee;
 import com.profitable.ws.model.entity.OrderStatus;
 import com.profitable.ws.model.entity.OrderSubtype;
 import com.profitable.ws.model.entity.OrderType;
 import com.profitable.ws.model.entity.Withdraw;
+import com.profitable.ws.repositories.OrderRepository;
 import com.profitable.ws.service.ExchangeAccountService;
 
 import lombok.extern.slf4j.Slf4j;
+
 
 @Service("binance")
 @Slf4j
@@ -87,6 +102,12 @@ public class BinanceService implements ExchangeAccountService {
 	private HttpEntity<Object> requestParameters;
 	
 	private ObjectMapper mapper = new ObjectMapper();
+	
+	@Autowired
+	private BinanceApiRestClient restClient;
+	
+	@Autowired
+	private OrderRepository orderRepository;
 	
 	@PostConstruct
 	public void setRequestConfigurations() throws NoSuchAlgorithmException, InvalidKeyException {
@@ -144,22 +165,99 @@ public class BinanceService implements ExchangeAccountService {
 	}
 
 	@Override
-	public List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, CurrencyType currency,
+	public List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, Symbol symbol,
 			OrderType orderType, Integer pageSize, Integer currentPage) {
-		return null;
+		String service = "/api/v3/allOrders";
+		UriComponentsBuilder builder = UriComponentsBuilder
+			.fromHttpUrl(apiUrl.concat(service))
+			.queryParam("symbol", symbol.getBaseAsset().toString() + symbol.getQuoteAsset().toString())
+			.queryParam("timestamp", LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+			.queryParam("startTime", startDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+			.queryParam("endTime", startDate.atStartOfDay().plusDays(1).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+			.queryParam("limit", pageSize);
+		fillSignature(builder.build().getQuery());
+		String endPoint = builder.queryParam(SIGNED_PARAM, signature).build().toString();
+		try {
+			ResponseEntity<List<BinanceOrder>> orders = restTemplate.exchange(endPoint, HttpMethod.GET, requestParameters, new ParameterizedTypeReference<List<BinanceOrder>>() {});
+			return orders
+					.getBody()
+					.stream()
+					.map(o -> {
+						Order order = Order
+								.builder()
+								.id(String.valueOf(o.getOrderId()))
+								.pair(o.getSymbol())
+								.code(o.getClientOrderId())
+								.unitPrice(o.getPrice())
+								.amount(o.getOrigQty())
+								.type(OrderType.valueOf(o.getSide()))
+								.createDate(LocalDateTime.ofInstant(Instant.ofEpochMilli(o.getTime()), TimeZone.getDefault().toZoneId()))
+								.updateDate(LocalDateTime.ofInstant(Instant.ofEpochMilli(o.getUpdateTime()), TimeZone.getDefault().toZoneId()))
+								.build();
+						return order;
+					})
+					.collect(Collectors.toList());
+		} catch (HttpClientErrorException exception) {
+			log.error(String.format("Error code %d, type %s, details %s", exception.getStatusCode().value(), exception.getStatusText(), exception.getResponseBodyAsString()));
+			return null;
+		}
 	}
 
 	@Override
-	public Order createOrder(CurrencyType currency, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount,
-			BigDecimal unitPrice, BigDecimal requestPrice) {
-		// TODO Auto-generated method stub
-		return null;
+	public Order createOrder(Symbol symbol, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount,
+			BigDecimal unitPrice, BigDecimal requestPrice, BigDecimal stopPrice, BigDecimal stopLimitPrice) {
+		UriComponentsBuilder uri = UriComponentsBuilder
+			.fromHttpUrl(apiUrl.concat("/api/v3/order/oco"))
+			.queryParam("timestamp", LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+		Map<String, Object> requestForm = Map.of("symbol", symbol.toString(), "side", orderType.toString(), "quantity", amount, "stopPrice", stopPrice, "stopLimitPrice", stopLimitPrice);
+		headers.add("Content-Type", CONTENT_TYPE);
+		fillSignature(uri.build().getQuery());
+		uri.queryParam(SIGNED_PARAM, signature);
+		String request = uri.build().toString();
+		requestParameters = new HttpEntity<Object>(requestForm, headers);
+		if (orderType == OrderType.BUY || orderSubtype == OrderSubtype.OCO) {
+			BinanceOCOOrder binanceOCOOrder = restTemplate.exchange(request, HttpMethod.POST, requestParameters, BinanceOCOOrder.class, headers).getBody();
+			Order order = Order
+						.builder()
+						.id(String.valueOf(binanceOCOOrder.getOrderListId()))
+						.code(binanceOCOOrder.getListClientOrderId())
+						.createDate(LocalDateTime.ofInstant(Instant.ofEpochMilli(binanceOCOOrder.getTransactionTime()), TimeZone.getDefault().toZoneId()))
+						.updateDate(null)
+						.amount(binanceOCOOrder.getOrderReports().get(0).getOrigQty())
+						.unitPrice(binanceOCOOrder.getOrderReports().get(1).getPrice())
+						.build();
+			orderRepository.save(order);
+			return order;
+		} else {
+			NewOrderResponse newOrder = (orderType == OrderType.BUY && orderSubtype == OrderSubtype.LIMIT)? restClient.newOrder(limitBuy(symbol.toString(), TimeInForce.GTC, amount.toString(), unitPrice.toString())) : 
+				(orderType == OrderType.BUY && orderSubtype == OrderSubtype.MARKET)? restClient.newOrder(marketBuy(symbol.toString(), amount.toString()).newOrderRespType(NewOrderResponseType.FULL)) :
+					(orderType == OrderType.SELL && orderSubtype == OrderSubtype.LIMIT)? restClient.newOrder(limitSell(symbol.toString(), TimeInForce.GTC, amount.toString(), unitPrice.toString())) :
+						restClient.newOrder(marketSell(symbol.toString(), amount.toString()).newOrderRespType(NewOrderResponseType.FULL));
+					BigDecimal totalFee = newOrder.getFills().stream().map(trade -> new BigDecimal(trade.getCommission())).reduce(new BigDecimal(0), (tradeFill, tradeFillAnother) -> tradeFill.add(tradeFillAnother));
+					Order order = Order
+							.builder()
+							.id(newOrder.getOrderId().toString())
+							.code(newOrder.getClientOrderId())
+							.amount(amount)
+							.createDate(LocalDateTime.ofInstant(Instant.ofEpochMilli(newOrder.getTransactTime()), TimeZone.getDefault().toZoneId()))
+							.executed(newOrder.getOrigQty().equals(newOrder.getExecutedQty()))
+							.executedAmount(new BigDecimal(newOrder.getExecutedQty()))
+							.fees(List.of(OrderFee.builder().value(totalFee).build()))
+							.subtype(orderSubtype)
+							.build();
+					orderRepository.save(order);
+					return order;
+		}
 	}
 
 	@Override
-	public Integer cancelOrder(String orderId) {
-		// TODO Auto-generated method stub
-		return null;
+	public Integer cancelOrder(Symbol symbol, String orderId) {
+		CancelOrderResponse cancelOrder = restClient.cancelOrder(new CancelOrderRequest(symbol.toString(), Long.valueOf(orderId)));
+		orderRepository.findById(orderId).ifPresent((Order o) -> {
+			o.setStatus(OrderStatus.CANCELED);
+			orderRepository.save(o);
+		});
+		return Integer.valueOf(cancelOrder.getOrderId());
 	}
 
 	@Override

@@ -17,6 +17,15 @@
 	<properties>
 		<java.version>12</java.version>
 	</properties>
+	
+	<repositories>
+	
+	  <repository>
+	    <id>jitpack.io</id>
+	    <url>https://jitpack.io</url>
+	  </repository>
+	  
+	</repositories>	
 
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter -->
@@ -90,18 +99,10 @@
 		    <artifactId>h2</artifactId>
 		</dependency>
 		
-		<!-- https://mvnrepository.com/artifact/org.springframework/spring-websocket -->
+		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-websocket -->
 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-websocket</artifactId>
-<!-- 		    <version>5.0.5.RELEASE</version> -->
-		</dependency>
-		 
-		<!-- https://mvnrepository.com/artifact/org.springframework/spring-messaging -->
-		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-messaging</artifactId>
-		    <version>5.0.5.RELEASE</version>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
@@ -109,6 +110,12 @@
 		    <groupId>org.apache.httpcomponents</groupId>
 		    <artifactId>httpclient</artifactId>
 		</dependency>
+		
+		<dependency>
+		  <groupId>com.github.binance-exchange</groupId>
+		  <artifactId>binance-java-api</artifactId>
+		  <version>master-SNAPSHOT</version>
+		</dependency>	
 		
 	</dependencies>
 

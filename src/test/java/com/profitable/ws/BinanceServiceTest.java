@@ -21,6 +21,9 @@ import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.DepositStatus;
+import com.profitable.ws.model.entity.Order;
+import com.profitable.ws.model.entity.OrderStatus;
+import com.profitable.ws.model.entity.OrderType;
 import com.profitable.ws.model.entity.Withdraw;
 import com.profitable.ws.service.impl.BinanceService;
 
@@ -59,11 +62,21 @@ public class BinanceServiceTest {
 		assertTrue(withdrawals.isEmpty());
 	}
 	
-	@Test
+	@Ignore
 	public void getDeposits() {
 		List<CriptoDeposit> deposits = service.criptoDeposits(CurrencyType.BTC, 0, 0, DepositStatus.CONFIRMED, LocalDate.of(2019, 1, 1), LocalDate.of(2019, 12, 3));
 		assertNotNull(deposits);
 		assertFalse(deposits.isEmpty());
 	}
 	
+	@Test
+	public void getOrders() {
+		List<Order> orders = service.orders(OrderStatus.EXECUTED_COMPLETELY, LocalDate.of(2019, 12, 3), null, Symbol.builder().baseAsset(CurrencyType.NEO).quoteAsset(CurrencyType.BTC).build(), OrderType.BUY, 1000, 0);
+		assertNotNull(orders);
+		assertFalse(orders.isEmpty());		
+	}
+	
+	public void shouldCreateOrder() {
+		service.createOrder(null, null, null, null, null, null, null, null);
+	}
 }

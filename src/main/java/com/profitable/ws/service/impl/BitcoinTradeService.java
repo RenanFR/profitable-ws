@@ -86,14 +86,14 @@ public class BitcoinTradeService implements ExchangeAccountService {
 	}
 
 	@Override
-	public List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, CurrencyType currency,
+	public List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, Symbol symbol,
 			OrderType orderType, Integer pageSize, Integer currentPage) {
 		String uri = UriComponentsBuilder
 			.fromHttpUrl(apiUrl.concat("/market/user_orders/list"))
 			.queryParam("status", status.toString().toLowerCase())
 			.queryParam("start_date", startDate)
 			.queryParam("end_date", endDate)
-			.queryParam("pair", "BRL" + currency.toString())
+			.queryParam("pair", symbol.getBaseAsset().toString() + symbol.getQuoteAsset().toString())
 			.queryParam("type", orderType.toString().toLowerCase())
 			.queryParam("page_size", 100)
 			.queryParam("current_page", 1)
@@ -134,10 +134,10 @@ public class BitcoinTradeService implements ExchangeAccountService {
 	}
 
 	@Override
-	public Order createOrder(CurrencyType currency, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount,
-			BigDecimal unitPrice, BigDecimal requestPrice) {
+	public Order createOrder(Symbol symbol, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount,
+			BigDecimal unitPrice, BigDecimal requestPrice, BigDecimal stopPrice, BigDecimal stopLimitPrice) {
 		HttpEntity<Order> orderData = new HttpEntity<Order>(Order.builder()
-				.pair("BRL".concat(currency.name()))
+				.pair("BRL".concat(symbol.getQuoteAsset().toString()))
 				.amount(amount)
 				.type(orderType)
 				.subtype(orderSubtype)
@@ -152,7 +152,7 @@ public class BitcoinTradeService implements ExchangeAccountService {
 	}
 
 	@Override
-	public Integer cancelOrder(String orderId) {
+	public Integer cancelOrder(Symbol symbol, String orderId) {
 		String url = UriComponentsBuilder
 				.fromHttpUrl(String.format("%s/%s/%s", apiUrl, "/market/user_orders/", orderId))
 				.toUriString();

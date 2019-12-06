@@ -60,5 +60,10 @@ public class Symbol {
 			return false;
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return baseAsset.toString() + quoteAsset.toString();
+	}
 	
 }

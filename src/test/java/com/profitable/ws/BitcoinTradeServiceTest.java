@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.profitable.ws.model.dto.AssetTicker;
+import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.DepositStatus;
@@ -39,7 +40,7 @@ public class BitcoinTradeServiceTest {
 	
 	@Test
 	public void shouldGetTraderOrders() {
-		List<Order> orders = service.orders(OrderStatus.EXECUTED_COMPLETELY, LocalDate.of(2019, 06, 26), LocalDate.of(2019, 10, 21), CurrencyType.BTC, OrderType.SELL, 100, 1);
+		List<Order> orders = service.orders(OrderStatus.EXECUTED_COMPLETELY, LocalDate.of(2019, 06, 26), LocalDate.of(2019, 10, 21), Symbol.builder().baseAsset(CurrencyType.BRL).quoteAsset(CurrencyType.BTC).build(), OrderType.SELL, 100, 1);
 		assertTrue(orders.size() == 5);
 	}
 	

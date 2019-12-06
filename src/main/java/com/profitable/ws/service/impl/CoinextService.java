@@ -125,21 +125,21 @@ public class CoinextService implements ExchangeAccountService {
 	}
 
 	@Override
-	public List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, CurrencyType currency,
+	public List<Order> orders(OrderStatus status, LocalDate startDate, LocalDate endDate, Symbol symbol,
 			OrderType orderType, Integer pageSize, Integer currentPage) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Order createOrder(CurrencyType currency, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount,
-			BigDecimal unitPrice, BigDecimal requestPrice) {
+	public Order createOrder(Symbol symbol, OrderType orderType, OrderSubtype orderSubtype, BigDecimal amount,
+			BigDecimal unitPrice, BigDecimal requestPrice, BigDecimal stopPrice, BigDecimal stopLimitPrice) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer cancelOrder(String orderId) {
+	public Integer cancelOrder(Symbol symbol, String orderId) {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.profitable.ws.model.dto.Symbol;
 import com.profitable.ws.model.entity.CriptoDeposit;
 import com.profitable.ws.model.entity.CurrencyType;
 import com.profitable.ws.model.entity.DepositStatus;
@@ -91,7 +92,7 @@ public class TraderResource implements GenericController<Trader> {
 			@RequestParam("start_date") LocalDate startDate, @RequestParam("end_date") LocalDate endDate,
 			@RequestParam("pair") String pair, @RequestParam("type") OrderType orderType,
 			@RequestParam(value = "page_size", required = false) Integer pageSize, @RequestParam(value = "current_page", required = false) Integer currentPage) {
-		return ResponseEntity.ok(exchangeService.orders(status, startDate, endDate, CurrencyType.valueOf(pair.substring(3)), orderType, pageSize, currentPage));
+		return ResponseEntity.ok(exchangeService.orders(status, startDate, endDate, Symbol.builder().baseAsset(CurrencyType.BRL).quoteAsset(CurrencyType.valueOf(pair.substring(3))).build(), orderType, pageSize, currentPage));
 	}
 	
 	@GetMapping("{id}/deposits/{coin}")

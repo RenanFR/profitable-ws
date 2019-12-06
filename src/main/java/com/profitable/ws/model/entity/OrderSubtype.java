@@ -8,6 +8,7 @@ public enum OrderSubtype {
 	STOP_LOSS_LIMIT,
 	TAKE_PROFIT_LIMIT,
 	TAKE_PROFIT,
+	OCO,
 	LIMITED,
 	MARKET;
 	
